@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CarMaster AI - Preguntas sobre Coches</title>
+<style>
+:root{
+  --bg:#0a0a0a;
+  --accent:#b30000;
+  --panel:#111;
+  --text:#fff;
+  --highlight:#ff0000;
+}
+body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--text);}
+header
