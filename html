@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CarMaster AI - Ultimate Cars Q&A</title>
+<style>
+:root{
+  --bg:#0a0a0a;
+  --accent:#b30000;
+  --panel:#111;
+  --text:#fff;
+  --highlight:#ff0000;
+}
+body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--text);}
+header{background:var(--accent);padding:20px;text-align:center;font-size:2rem;font-weight:bold;letter-spacing:2px;position:relative;}
+.dagas{position:absolute;width:50px;height:50px;top:10px;right:10px;background:url('https://i.imgur.com/J1p4Vbh.png') no-repeat center/contain;}
+.container{max-width:1000px;margin:auto;padding:20px;}
+.card{background:var(--panel);padding:20px;border-radius:12px;box-shadow:0 0 30px var(--accent);margin-bottom:20px;}
+textarea{width:100%;padding:12px;margin:8px 0;border-radius:8px;border:none;background:#1a1a1a;color:#fff;resize:vertical;}
+button{width:100%;padding:12px;font-size:1rem;border:none;border-radius:8px;background:var(--accent);color:#fff;cursor:pointer;font-weight:bold;}
+button:hover{background:#d00000;}
+#respuesta{margin-top:20px;padding:15px;background:#151515;border-left:4px solid var(--highlight);border-radius:6px;min-height:120px;white-space:pre-wrap;}
+#historial{margin-top:10px;font-size:0.9rem;color:#d6bdbd;max-height:120px;overflow-y:auto;}
+label{display:block;margin-top:10px;cursor:pointer;font-size:0.9rem;}
+@media(max-width:920px){.container{padding:10px;}}
+</style>
+</head>
+<body>
+<header>CarMaster AI<div class="dagas"></div></header>
+<div class="container">
+  <div class="card">
+    <h2>Pregunta sobre cualquier carro</h2>
+    <textarea id="pregunta" placeholder="Ej: Historia de Ferrari, modelos de BMW, motor Mustang GT..."></textarea>
+    <button onclick="responder()">Preguntar</button>
+    <label><input type="checkbox" id="modoIA"> Activar IA avanzada (requiere backend OpenAI)</label>
+    <div id="respuesta">Aquí aparecerá la respuesta...</div>
+    <div id="historial"></div>
+  </div>
+</div>
+
+<script>
+let base=[]; // base de datos cargada desde data.json
+const historial=[];
+
+// Cargar data.json al inicio
+fetch('data.json')
+  .then(res=>res.json())
+  .then(data=>{base=data;})
+  .catch(err=>console.error("Error cargando base de datos:",err));
+
+async function responder(){
+  const q=document.getElementById("pregunta").value.toLowerCase();
+  const respuestaEl=document.getElementById("respuesta");
+  const historialEl=document.getElementById("historial");
+  const modoIA=document.getElementById("modoIA").checked;
+  if(q===""){respuestaEl.innerText="Escribe tu pregunta...";return;}
+
+  let match=base.find(b=>{
+    return q.includes(b.marca.toLowerCase())||b.modelos.some(m=>q.includes(m.toLowerCase()));
+  });
+
+  if(match && !modoIA){
+    const texto=`Marca: ${match.marca}\nFundador: ${match.fundador}\nAño: ${match.ano}\nPaís: ${match.pais}\nCategorías: ${match.categorias.join(", ")}\nModelos: ${match.modelos.join(", ")}\nMotores: ${match.motores.join(", ")}\nRango de precio: ${match.precio}`;
+    respuestaEl.innerText=texto;
+    historial.push(q);
+  } else if(modoIA){
+    try{
+      const res=await fetch('/api/ask',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:q})});
+      const data=await res.json();
+      respuestaEl.innerText=data.answer||"No hubo respuesta desde IA.";
+      historial.push(q);
+    }catch(e){respuestaEl.innerText="Error al consultar IA: "+e;}
+  } else {
+    respuestaEl.innerText="No encontré información local. Activa IA avanzada para respuesta completa.";
+    historial.push(q);
+  }
+
+  historialEl.innerText="Historial de preguntas:\n"+historial.map((h,i)=>`${i+1}. ${h}`).join("\n");
+}
+</script>
+</body>
+</html>
+[
+  {"marca":"Toyota","pais":"Japón","fundador":"Kiichiro Toyoda","ano":1937,"categorias":["baja","media","alta","SUV"],"modelos":["Corolla","Camry","Prius","Supra","Hilux"],"motores":["4c","V6","Híbrido"],"precio":"$20k-$90k"},
+  {"marca":"Honda","pais":"Japón","fundador":"Soichiro Honda","ano":1948,"categorias":["baja","media","alta","Moto"],"modelos":["Civic","Accord","NSX"],"motores":["4c","V6"],"precio":"$18k-$150k"},
+  {"marca":"Ferrari","pais":"Italia","fundador":"Enzo Ferrari","ano":1939,"categorias":["alta","superdeportivo"],"modelos":["LaFerrari","488","F8"],"motores":["V8","V12"],"precio":"$250k-$3M"},
+  {"marca":"Lamborghini","pais":"Italia","fundador":"Ferruccio Lamborghini","ano":1963,"categorias":["superdeportivo"],"modelos":["Huracán","Aventador"],"motores":["V10","V12"],"precio":"$250k-$500k"},
+  {"marca":"Ford","pais":"EEUU","fundador":"Henry Ford","ano":1903,"categorias":["baja","media","alta","pickup"],"modelos":["Mustang","F-150","Fiesta"],"motores":["4c","V6","V8"],"precio":"$20k-$90k"},
+  {"marca":"Tesla","pais":"EEUU","fundador":"Elon Musk","ano":2003,"categorias":["alta","eléctrico"],"modelos":["Model S","Model 3","Model X","Model Y"],"motores":["eléctrico"],"precio":"$40k-$150k"},
+  {"marca":"BMW","pais":"Alemania","fundador":"Franz Josef Popp","ano":1916,"categorias":["media","alta","deportiva"],"modelos":["Serie 3","Serie 5","M3","M5"],"motores":["4c","6c","V8"],"precio":"$35k-$150k"},
+  {"marca":"Mercedes","pais":"Alemania","fundador":"Karl Benz","ano":1926,"categorias":["alta","lujo","deportiva"],"modelos":["Clase C","Clase S","AMG GT"],"motores":["V6","V8","V12"],"precio":"$40k-$250k"}
+]
